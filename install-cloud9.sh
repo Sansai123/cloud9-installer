@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Exit on severe errors
+set -e
+
 # Color definitions
 GREEN="\033[1;32m"
 BLUE="\033[1;34m"
@@ -12,7 +15,7 @@ print_msg() {
 }
 
 print_msg "$BLUE" "================================================="
-print_msg "$GREEN" "🚀 Cloud9 Sansaii_c9 Auto-Installer (Paket Lengkap)"
+print_msg "$GREEN" "🚀 Cloud9 Sansaii_c9 Auto-Installer (PHP 8.x Ready)"
 print_msg "$BLUE" "================================================="
 
 # Step 1: Detect OS & Package Manager
@@ -60,20 +63,21 @@ PORT=${PORT:-8080}
 
 # Step 4: Cleanup Old Containers
 print_msg "$YELLOW" "🧹 Cleaning old Cloud9 containers if present..."
-sudo docker stop Sansaii_c9 &>/dev/null
-sudo docker rm Sansaii_c9 &>/dev/null
+sudo docker stop Sansaii_c9 &>/dev/null || true
+sudo docker rm Sansaii_c9 &>/dev/null || true
 
-# Step 5: Deploy Cloud9 Container (LinuxServer Version)
-print_msg "$YELLOW" "🐳 Deploying LinuxServer Cloud9 Container on Port ${PORT}..."
+# Step 5: Deploy Cloud9 Container (Menggunakan Base Image Ubuntu Jammy untuk PHP 8.x)
+print_msg "$YELLOW" "🐳 Deploying Cloud9 Container on Port ${PORT}..."
 sudo docker run -d \
   --name Sansaii_c9 \
   --restart always \
   -p ${PORT}:8000 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
   -e PUID=1000 \
   -e PGID=1000 \
   -e USERNAME=$USERNAME \
   -e PASSWORD=$PASSWORD \
-  lscr.io/linuxserver/cloud9:latest
+  lscr.io/linuxserver/cloud9:ubuntu-jammy
 
 if [ $? -eq 0 ]; then
   print_msg "$GREEN" "✅ Container deployed successfully."
@@ -82,25 +86,22 @@ else
   exit 1
 fi
 
-# Step 6: Auto Install PHP & Python Inside Container
+# Step 6: Auto Install PHP 8.x & Python 3 Inside Container
 print_msg "$YELLOW" "⏳ Waiting for container to initialize..."
 sleep 10
 
 print_msg "$YELLOW" "📦 Installing PHP 8.x, Python 3, and essentials inside Cloud9..."
-sudo docker exec -i Sansaii_c9 bash -c "apt update && DEBIAN_FRONTEND=noninteractive apt install -y php php-cli php-curl php-mbstring php-xml php-zip python3 python3-pip git curl wget"
+sudo docker exec -i Sansaii_c9 bash -c "apt update && DEBIAN_FRONTEND=noninteractive apt install -y php php-cli php-curl php-mbstring php-xml php-zip php-gd php-mysql python3 python3-pip git curl wget"
 
 if [ $? -eq 0 ]; then
   print_msg "$GREEN" "✅ PHP 8.x and Python 3 installed successfully."
 else
-  print_msg "$RED" "⚠️ Warning: Failed to auto-install PHP/Python. You can install them manually inside C9 terminal."
+  print_msg "$RED" "⚠️ Warning: Failed to auto-install PHP/Python inside C9."
 fi
 
 # Step 7: Get Public IP
 print_msg "$YELLOW" "🌐 Fetching Server Public IP..."
-PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me || curl -s --max-time 5 api.ipify.org)
-if [ -z "$PUBLIC_IP" ]; then
-  PUBLIC_IP="YOUR_SERVER_IP"
-fi
+PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me || curl -s --max-time 5 api.ipify.org || echo "YOUR_SERVER_IP")
 
 print_msg "$BLUE" "==========================================="
 print_msg "$GREEN" "🎉 Cloud9 Setup Successfully Finished!"
