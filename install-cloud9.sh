@@ -1,0 +1,99 @@
+#!/bin/bash
+
+# Color definitions
+GREEN="\033[1;32m"
+BLUE="\033[1;34m"
+YELLOW="\033[1;33m"
+RED="\033[1;31m"
+RESET="\033[0m"
+
+print_msg() {
+  echo -e "${1}${2}${RESET}"
+}
+
+print_msg "$BLUE" "================================================="
+print_msg "$GREEN" "🚀 Cloud9 Sansaii_c9 Auto-Installer (Port 8080)"
+print_msg "$BLUE" "================================================="
+
+# Step 1: Detect OS & Package Manager
+print_msg "$YELLOW" "🔍 Detecting System OS..."
+if [ -f /etc/os-release ]; then
+  . /etc/os-release
+  OS=$ID
+else
+  print_msg "$RED" "❌ Unknown OS. Exiting..."
+  exit 1
+fi
+
+print_msg "$BLUE" "🖥️ OS Detected: $OS"
+
+# Step 2: Install Prerequisites & Docker Engine
+print_msg "$YELLOW" "⚙️ Installing Docker and Required Tools..."
+
+if [[ "$OS" == "ubuntu" || "$OS" == "debian" ]]; then
+  sudo apt update -y && sudo apt install -y curl wget git docker.io
+  sudo systemctl enable --now docker
+elif [[ "$OS" == "centos" || "$OS" == "rhel" || "$OS" == "almalinux" || "$OS" == "rocky" || "$OS" == "fedora" ]]; then
+  sudo dnf install -y curl wget git docker
+  sudo systemctl enable --now docker
+else
+  print_msg "$RED" "❌ Unsupported Distribution."
+  exit 1
+fi
+
+if ! command -v docker &> /dev/null; then
+  print_msg "$RED" "❌ Docker installation failed."
+  exit 1
+fi
+
+print_msg "$GREEN" "✅ Docker is running successfully."
+
+# Step 3: Interactive Credentials Prompt
+read -p "Enter Cloud9 Username [default: root]: " USERNAME
+USERNAME=${USERNAME:-root}
+
+read -p "Enter Cloud9 Password [default: sansai]: " PASSWORD
+PASSWORD=${PASSWORD:-sansai}
+
+read -p "Enter Port [default: 8080]: " PORT
+PORT=${PORT:-8080}
+
+# Step 4: Cleanup Old Containers
+print_msg "$YELLOW" "🧹 Cleaning old Cloud9 containers if present..."
+sudo docker stop Sansaii_c9 &>/dev/null
+sudo docker rm Sansaii_c9 &>/dev/null
+
+# Step 5: Deploy Cloud9 SDK Container
+print_msg "$YELLOW" "🐳 Deploying Cloud9 Server Container on Port ${PORT}..."
+sudo docker run -d \
+  --name Sansaii_c9 \
+  --restart always \
+  -p ${PORT}:8000 \
+  -e USERNAME=$USERNAME \
+  -e PASSWORD=$PASSWORD \
+  sapk/cloud9:latest
+
+if [ $? -eq 0 ]; then
+  print_msg "$GREEN" "✅ Container deployed successfully."
+else
+  print_msg "$RED" "❌ Failed to start Docker container."
+  exit 1
+fi
+
+# Step 6: Get Public IP
+print_msg "$YELLOW" "🌐 Fetching Server Public IP..."
+PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me || curl -s --max-time 5 api.ipify.org)
+if [ -z "$PUBLIC_IP" ]; then
+  PUBLIC_IP="YOUR_SERVER_IP"
+fi
+
+print_msg "$BLUE" "==========================================="
+print_msg "$GREEN" "🎉 Cloud9 Setup Successfully Finished!"
+print_msg "$BLUE" "==========================================="
+print_msg "$YELLOW" "🔗 Access URL : http://${PUBLIC_IP}:${PORT}"
+print_msg "$YELLOW" "🔑 Username   : ${USERNAME}"
+print_msg "$YELLOW" "🔑 Password   : ${PASSWORD}"
+print_msg "$BLUE" "==========================================="
+
+# Auto remove this script file after execution
+rm -f "$0"
