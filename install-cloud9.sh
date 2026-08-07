@@ -66,16 +66,14 @@ print_msg "$YELLOW" "🧹 Cleaning old Cloud9 containers if present..."
 sudo docker stop Sansaii_c9 &>/dev/null || true
 sudo docker rm Sansaii_c9 &>/dev/null || true
 
-# Step 5: Deploy Cloud9 Container (Using Official Ubuntu 22.04 Image)
-print_msg "$YELLOW" "🐳 Deploying Cloud9 Container (Ubuntu 22.04) on Port ${PORT}..."
+# Step 5: Deploy Base Container (Official Ubuntu 22.04 LTS)
+print_msg "$YELLOW" "🐳 Deploying Base Container (Ubuntu 22.04) on Port ${PORT}..."
 sudo docker run -d \
   --name Sansaii_c9 \
   --restart always \
-  -p ${PORT}:8000 \
+  -p ${PORT}:8080 \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  -e USERNAME=$USERNAME \
-  -e PASSWORD=$PASSWORD \
-  sanderweel/cloud9:latest
+  ubuntu:22.04 tail -f /dev/null
 
 if [ $? -eq 0 ]; then
   print_msg "$GREEN" "✅ Container deployed successfully."
@@ -84,17 +82,17 @@ else
   exit 1
 fi
 
-# Step 6: Auto Install PHP 8.3 & Python 3 Inside Container
-print_msg "$YELLOW" "⏳ Waiting for container to initialize..."
-sleep 10
+# Step 6: Auto Install PHP 8.3 & Essentials Inside Container
+print_msg "$YELLOW" "⏳ Preparing environment inside container..."
+sleep 3
 
-print_msg "$YELLOW" "📦 Installing PHP 8.3, Python 3, and essentials inside Cloud9..."
-sudo docker exec -i Sansaii_c9 bash -c "apt update && DEBIAN_FRONTEND=noninteractive apt install -y software-properties-common python3 python3-pip git curl wget && add-apt-repository -y ppa:ondrej/php && apt update && DEBIAN_FRONTEND=noninteractive apt install -y php8.3 php8.3-cli php8.3-curl php8.3-mbstring php8.3-xml php8.3-zip php8.3-gd php8.3-mysql && update-alternatives --set php /usr/bin/php8.3"
+print_msg "$YELLOW" "📦 Installing PHP 8.3 and tools inside container..."
+sudo docker exec -i Sansaii_c9 bash -c "apt update && DEBIAN_FRONTEND=noninteractive apt install -y software-properties-common curl wget git python3 make g++ && add-apt-repository -y ppa:ondrej/php && apt update && DEBIAN_FRONTEND=noninteractive apt install -y php8.3 php8.3-cli php8.3-curl php8.3-mbstring php8.3-xml php8.3-zip php8.3-gd php8.3-mysql"
 
 if [ $? -eq 0 ]; then
-  print_msg "$GREEN" "✅ PHP 8.3 and Python 3 installed successfully."
+  print_msg "$GREEN" "✅ PHP 8.3 installed successfully."
 else
-  print_msg "$RED" "⚠️ Warning: Failed to auto-install PHP 8.3 inside C9."
+  print_msg "$RED" "⚠️ Warning: Failed to install PHP 8.3."
 fi
 
 # Step 7: Get Public IP
@@ -102,11 +100,9 @@ print_msg "$YELLOW" "🌐 Fetching Server Public IP..."
 PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me || curl -s --max-time 5 api.ipify.org || echo "YOUR_SERVER_IP")
 
 print_msg "$BLUE" "==========================================="
-print_msg "$GREEN" "🎉 Cloud9 Setup Successfully Finished!"
+print_msg "$GREEN" "🎉 Setup Successfully Finished!"
 print_msg "$BLUE" "==========================================="
-print_msg "$YELLOW" "🔗 Access URL : http://${PUBLIC_IP}:${PORT}"
-print_msg "$YELLOW" "🔑 Username   : ${USERNAME}"
-print_msg "$YELLOW" "🔑 Password   : ${PASSWORD}"
+print_msg "$YELLOW" "🔗 Access IP : http://${PUBLIC_IP}:${PORT}"
 print_msg "$BLUE" "==========================================="
 
 # Auto remove script file after execution
