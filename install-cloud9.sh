@@ -15,7 +15,7 @@ print_msg() {
 }
 
 print_msg "$BLUE" "================================================="
-print_msg "$GREEN" "🚀 Cloud9 Sansaii_c9 Auto-Installer (PHP 8.x Ready)"
+print_msg "$GREEN" "🚀 Cloud9 Sansaii_c9 Auto-Installer (PHP Ready)"
 print_msg "$BLUE" "================================================="
 
 # Step 1: Detect OS & Package Manager
@@ -66,7 +66,7 @@ print_msg "$YELLOW" "🧹 Cleaning old Cloud9 containers if present..."
 sudo docker stop Sansaii_c9 &>/dev/null || true
 sudo docker rm Sansaii_c9 &>/dev/null || true
 
-# Step 5: Deploy Cloud9 Container (Menggunakan Base Image Ubuntu Jammy untuk PHP 8.x)
+# Step 5: Deploy Cloud9 Container
 print_msg "$YELLOW" "🐳 Deploying Cloud9 Container on Port ${PORT}..."
 sudo docker run -d \
   --name Sansaii_c9 \
@@ -86,15 +86,15 @@ else
   exit 1
 fi
 
-# Step 6: Auto Install PHP 8.x & Python 3 Inside Container
+# Step 6: Auto Install PHP & Python Inside Container
 print_msg "$YELLOW" "⏳ Waiting for container to initialize..."
 sleep 10
 
-print_msg "$YELLOW" "📦 Installing PHP 8.x, Python 3, and essentials inside Cloud9..."
+print_msg "$YELLOW" "📦 Installing PHP, Python 3, and essentials inside Cloud9..."
 sudo docker exec -i Sansaii_c9 bash -c "apt update && DEBIAN_FRONTEND=noninteractive apt install -y php php-cli php-curl php-mbstring php-xml php-zip php-gd php-mysql python3 python3-pip git curl wget"
 
 if [ $? -eq 0 ]; then
-  print_msg "$GREEN" "✅ PHP 8.x and Python 3 installed successfully."
+  print_msg "$GREEN" "✅ PHP and Python 3 installed successfully."
 else
   print_msg "$RED" "⚠️ Warning: Failed to auto-install PHP/Python inside C9."
 fi
