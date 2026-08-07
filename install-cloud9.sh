@@ -15,10 +15,10 @@ print_msg() {
 }
 
 print_msg "$BLUE" "================================================="
-print_msg "$GREEN" "🚀 Cloud9 Sansaii_c9 Auto-Installer (PHP Ready)"
+print_msg "$GREEN" "🚀 Cloud9 Sansaii_c9 Auto-Installer (PHP 8.3 Ready)"
 print_msg "$BLUE" "================================================="
 
-# Step 1: Detect OS & Package Manager
+# Step 1: Detect OS
 print_msg "$YELLOW" "🔍 Detecting System OS..."
 if [ -f /etc/os-release ]; then
   . /etc/os-release
@@ -66,7 +66,7 @@ print_msg "$YELLOW" "🧹 Cleaning old Cloud9 containers if present..."
 sudo docker stop Sansaii_c9 &>/dev/null || true
 sudo docker rm Sansaii_c9 &>/dev/null || true
 
-# Step 5: Deploy Cloud9 Container
+# Step 5: Deploy Cloud9 Container (Using sapras/cloud9 - Ubuntu Jammy / 22.04 Compatible)
 print_msg "$YELLOW" "🐳 Deploying Cloud9 Container on Port ${PORT}..."
 sudo docker run -d \
   --name Sansaii_c9 \
@@ -77,7 +77,7 @@ sudo docker run -d \
   -e PGID=1000 \
   -e USERNAME=$USERNAME \
   -e PASSWORD=$PASSWORD \
-  lscr.io/linuxserver/cloud9:latest
+  sapras/cloud9:latest
 
 if [ $? -eq 0 ]; then
   print_msg "$GREEN" "✅ Container deployed successfully."
@@ -86,17 +86,17 @@ else
   exit 1
 fi
 
-# Step 6: Auto Install PHP & Python Inside Container
+# Step 6: Auto Install PHP 8.3 & Python 3 Inside Container
 print_msg "$YELLOW" "⏳ Waiting for container to initialize..."
 sleep 10
 
-print_msg "$YELLOW" "📦 Installing PHP, Python 3, and essentials inside Cloud9..."
-sudo docker exec -i Sansaii_c9 bash -c "apt update && DEBIAN_FRONTEND=noninteractive apt install -y php php-cli php-curl php-mbstring php-xml php-zip php-gd php-mysql python3 python3-pip git curl wget"
+print_msg "$YELLOW" "📦 Installing PHP 8.3, Python 3, and essentials inside Cloud9..."
+sudo docker exec -i Sansaii_c9 bash -c "apt update && DEBIAN_FRONTEND=noninteractive apt install -y software-properties-common python3 python3-pip git curl wget && add-apt-repository -y ppa:ondrej/php && apt update && DEBIAN_FRONTEND=noninteractive apt install -y php8.3 php8.3-cli php8.3-curl php8.3-mbstring php8.3-xml php8.3-zip php8.3-gd php8.3-mysql && update-alternatives --set php /usr/bin/php8.3"
 
 if [ $? -eq 0 ]; then
-  print_msg "$GREEN" "✅ PHP and Python 3 installed successfully."
+  print_msg "$GREEN" "✅ PHP 8.3 and Python 3 installed successfully."
 else
-  print_msg "$RED" "⚠️ Warning: Failed to auto-install PHP/Python inside C9."
+  print_msg "$RED" "⚠️ Warning: Failed to auto-install PHP 8.3 inside C9."
 fi
 
 # Step 7: Get Public IP
@@ -111,5 +111,5 @@ print_msg "$YELLOW" "🔑 Username   : ${USERNAME}"
 print_msg "$YELLOW" "🔑 Password   : ${PASSWORD}"
 print_msg "$BLUE" "==========================================="
 
-# Auto remove this script file after execution
+# Auto remove script file after execution
 rm -f "$0"
