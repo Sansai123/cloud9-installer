@@ -77,7 +77,7 @@ sudo docker run -d \
   -e PGID=1000 \
   -e USERNAME=$USERNAME \
   -e PASSWORD=$PASSWORD \
-  lscr.io/linuxserver/cloud9:ubuntu-jammy
+  lscr.io/linuxserver/cloud9:latest
 
 if [ $? -eq 0 ]; then
   print_msg "$GREEN" "✅ Container deployed successfully."
