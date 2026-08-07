@@ -66,18 +66,16 @@ print_msg "$YELLOW" "🧹 Cleaning old Cloud9 containers if present..."
 sudo docker stop Sansaii_c9 &>/dev/null || true
 sudo docker rm Sansaii_c9 &>/dev/null || true
 
-# Step 5: Deploy Cloud9 Container (Using sapras/cloud9 - Ubuntu Jammy / 22.04 Compatible)
-print_msg "$YELLOW" "🐳 Deploying Cloud9 Container on Port ${PORT}..."
+# Step 5: Deploy Cloud9 Container (Using Official Ubuntu 22.04 Image)
+print_msg "$YELLOW" "🐳 Deploying Cloud9 Container (Ubuntu 22.04) on Port ${PORT}..."
 sudo docker run -d \
   --name Sansaii_c9 \
   --restart always \
   -p ${PORT}:8000 \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  -e PUID=1000 \
-  -e PGID=1000 \
   -e USERNAME=$USERNAME \
   -e PASSWORD=$PASSWORD \
-  sapras/cloud9:latest
+  sanderweel/cloud9:latest
 
 if [ $? -eq 0 ]; then
   print_msg "$GREEN" "✅ Container deployed successfully."
