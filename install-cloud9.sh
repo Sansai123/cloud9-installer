@@ -1,109 +1,71 @@
 #!/bin/bash
 
-# Exit on severe errors
+# Exit immediately if a command exits with a non-zero status
 set -e
 
-# Color definitions
-GREEN="\033[1;32m"
-BLUE="\033[1;34m"
-YELLOW="\033[1;33m"
-RED="\033[1;31m"
-RESET="\033[0m"
+echo "================================================="
+echo "🚀 Cloud9 SDK Native + PHP 8.3 Auto-Installer"
+echo "================================================="
 
-print_msg() {
-  echo -e "${1}${2}${RESET}"
-}
+# 1. Update system & Install PHP 8.3
+echo "[1/5] Updating system & Installing PHP 8.3..."
+sudo apt update -y
+sudo apt install -y software-properties-common curl wget git build-essential python2 g++ make
 
-print_msg "$BLUE" "================================================="
-print_msg "$GREEN" "🚀 Cloud9 Sansaii_c9 Auto-Installer (PHP 8.3 Ready)"
-print_msg "$BLUE" "================================================="
+sudo add-apt-repository -y ppa:ondrej/php
+sudo apt update -y
+sudo apt install -y php8.3 php8.3-cli php8.3-curl php8.3-mbstring php8.3-xml php8.3-zip php8.3-gd php8.3-mysql
+sudo update-alternatives --set php /usr/bin/php8.3
 
-# Step 1: Detect OS
-print_msg "$YELLOW" "🔍 Detecting System OS..."
-if [ -f /etc/os-release ]; then
-  . /etc/os-release
-  OS=$ID
-else
-  print_msg "$RED" "❌ Unknown OS. Exiting..."
-  exit 1
-fi
+# 2. Install Node.js v16 (Required for Cloud9 SDK)
+echo "[2/5] Installing Node.js v16..."
+curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+sudo apt install -y nodejs
 
-print_msg "$BLUE" "🖥️ OS Detected: $OS"
+# 3. Clone & Build Cloud9 SDK
+echo "[3/5] Setting up Cloud9 SDK..."
+rm -rf $HOME/cloud9
+git clone https://github.com/c9/core.git $HOME/cloud9
+cd $HOME/cloud9
 
-# Step 2: Install Prerequisites & Docker Engine
-print_msg "$YELLOW" "⚙️ Installing Docker and Required Tools..."
+echo "[4/5] Running Cloud9 SDK Installer Script..."
+scripts/install-sdk.sh
 
-if [[ "$OS" == "ubuntu" || "$OS" == "debian" ]]; then
-  sudo apt update -y && sudo apt install -y curl wget git docker.io
-  sudo systemctl enable --now docker
-elif [[ "$OS" == "centos" || "$OS" == "rhel" || "$OS" == "almalinux" || "$OS" == "rocky" || "$OS" == "fedora" ]]; then
-  sudo dnf install -y curl wget git docker
-  sudo systemctl enable --now docker
-else
-  print_msg "$RED" "❌ Unsupported Distribution."
-  exit 1
-fi
+# 4. Create Systemd Service
+echo "[5/5] Configuring Systemd Service..."
 
-if ! command -v docker &> /dev/null; then
-  print_msg "$RED" "❌ Docker installation failed."
-  exit 1
-fi
+C9_PORT=8080
+C9_USER="root"
+C9_PASS="Sansaii26"
 
-print_msg "$GREEN" "✅ Docker is running successfully."
+sudo tee /etc/systemd/system/cloud9.service > /dev/null <<EOF
+[Unit]
+Description=Cloud9 IDE Native Service
+After=network.target
 
-# Step 3: Interactive Credentials Prompt
-read -p "Enter Cloud9 Username [default: root]: " USERNAME
-USERNAME=${USERNAME:-root}
+[Service]
+Type=simple
+User=$USER
+WorkingDirectory=$HOME/cloud9
+ExecStart=/usr/bin/node $HOME/cloud9/server.js -p $C9_PORT -a $C9_USER:$C9_PASS -w $HOME
+Restart=always
 
-read -p "Enter Cloud9 Password [default: sansai]: " PASSWORD
-PASSWORD=${PASSWORD:-sansai}
+[Install]
+WantedBy=multi-user.target
+EOF
 
-read -p "Enter Port [default: 8080]: " PORT
-PORT=${PORT:-8080}
+# Enable and Start Service
+sudo systemctl daemon-reload
+sudo systemctl enable cloud9
+sudo systemctl restart cloud9
 
-# Step 4: Cleanup Old Containers
-print_msg "$YELLOW" "🧹 Cleaning old Cloud9 containers if present..."
-sudo docker stop Sansaii_c9 &>/dev/null || true
-sudo docker rm Sansaii_c9 &>/dev/null || true
+# Final Information
+PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me || curl -s --max-time 5 api.ipify.org || echo "YOUR_VPS_IP")
 
-# Step 5: Deploy Base Container (Official Ubuntu 22.04 LTS)
-print_msg "$YELLOW" "🐳 Deploying Base Container (Ubuntu 22.04) on Port ${PORT}..."
-sudo docker run -d \
-  --name Sansaii_c9 \
-  --restart always \
-  -p ${PORT}:8080 \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  ubuntu:22.04 tail -f /dev/null
-
-if [ $? -eq 0 ]; then
-  print_msg "$GREEN" "✅ Container deployed successfully."
-else
-  print_msg "$RED" "❌ Failed to start Docker container."
-  exit 1
-fi
-
-# Step 6: Auto Install PHP 8.3 & Essentials Inside Container
-print_msg "$YELLOW" "⏳ Preparing environment inside container..."
-sleep 3
-
-print_msg "$YELLOW" "📦 Installing PHP 8.3 and tools inside container..."
-sudo docker exec -i Sansaii_c9 bash -c "apt update && DEBIAN_FRONTEND=noninteractive apt install -y software-properties-common curl wget git python3 make g++ && add-apt-repository -y ppa:ondrej/php && apt update && DEBIAN_FRONTEND=noninteractive apt install -y php8.3 php8.3-cli php8.3-curl php8.3-mbstring php8.3-xml php8.3-zip php8.3-gd php8.3-mysql"
-
-if [ $? -eq 0 ]; then
-  print_msg "$GREEN" "✅ PHP 8.3 installed successfully."
-else
-  print_msg "$RED" "⚠️ Warning: Failed to install PHP 8.3."
-fi
-
-# Step 7: Get Public IP
-print_msg "$YELLOW" "🌐 Fetching Server Public IP..."
-PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me || curl -s --max-time 5 api.ipify.org || echo "YOUR_SERVER_IP")
-
-print_msg "$BLUE" "==========================================="
-print_msg "$GREEN" "🎉 Setup Successfully Finished!"
-print_msg "$BLUE" "==========================================="
-print_msg "$YELLOW" "🔗 Access IP : http://${PUBLIC_IP}:${PORT}"
-print_msg "$BLUE" "==========================================="
-
-# Auto remove script file after execution
-rm -f "$0"
+echo "================================================="
+echo "🎉 Cloud9 Setup Successfully Completed!"
+echo "================================================="
+echo "🔗 Access URL : http://${PUBLIC_IP}:${C9_PORT}"
+echo "🔑 Username   : ${C9_USER}"
+echo "🔑 Password   : ${C9_PASS}"
+echo "================================================="
