@@ -30,34 +30,41 @@ if [ $(sudo docker ps -a -q -f name=cloud9) ]; then
     sudo docker rm -f cloud9
 fi
 
-# 4. Jalankan Cloud9 Container (Base Ubuntu 22.04 Native)
+# 4. Jalankan Cloud9 Container
 echo "[4/4] Menjalankan Cloud9 IDE Container..."
 sudo docker run -d \
   --name=cloud9 \
-  -e PUID=0 \
-  -e PGID=0 \
+  -e PUID=1000 \
+  -e PGID=1000 \
   -e TZ=Asia/Jakarta \
   -e USERNAME="$C9_USER" \
   -e PASSWORD="$C9_PASS" \
   -p "$C9_PORT":8000 \
   -v "$WORKSPACE_DIR":/code \
   --restart unless-stopped \
-  sapras/cloud9:latest
+  lscr.io/linuxserver/cloud9:latest
 
-# Memasang PHP 8.1 (Tanpa MySQL) & Python di Dalam Container
+# Memasang PHP 8.1 (via Ondrej Bionic Archive) & Python di Dalam Container
 sleep 5
 sudo docker exec -u root cloud9 apt-get update -y
+sudo docker exec -u root cloud9 apt-get install -y software-properties-common wget nano python3 python3-pip
+
+# Inject PPA Ondrej PHP dengan mirror archive Bionic
+sudo docker exec -u root cloud9 bash -c "echo 'deb http://ppa.launchpad.net/ondrej/php/ubuntu bionic main' > /etc/apt/sources.list.d/ondrej-php.list"
+sudo docker exec -u root cloud9 bash -c "apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 4F4EA0AAE5267A6C 14AA902398F442F1" || true
+sudo docker exec -u root cloud9 apt-get update -y
+
+# Install PHP 8.1 tanpa MySQL
 sudo docker exec -u root cloud9 apt-get install -y \
-    php8.1 \
     php8.1-cli \
     php8.1-curl \
     php8.1-mbstring \
     php8.1-xml \
-    php8.1-zip \
-    python3 \
-    python3-pip \
-    wget \
-    nano
+    php8.1-zip || sudo docker exec -u root cloud9 apt-get install -y --allow-unauthenticated \
+    php8.1-cli php8.1-curl php8.1-mbstring php8.1-xml php8.1-zip
+
+# Set PHP 8.1 sebagai default CLI
+sudo docker exec -u root cloud9 update-alternatives --set php /usr/bin/php8.1
 
 # Ambil IP Public VPS
 PUBLIC_IP=$(curl -s ifconfig.me || curl -s api.ipify.org || echo "IP-VPS-ANDA")
