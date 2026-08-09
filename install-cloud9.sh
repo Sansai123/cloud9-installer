@@ -36,7 +36,7 @@ echo "[5/5] Configuring Systemd Service..."
 
 C9_PORT=8080
 C9_USER="admin"
-C9_PASS="Sansaii83#Secure"
+C9_PASS="Sansaii26"
 
 sudo tee /etc/systemd/system/cloud9.service > /dev/null <<EOF
 [Unit]
