@@ -7,19 +7,19 @@ echo "================================================="
 echo "🚀 Cloud9 SDK Native + PHP 8.3 Auto-Installer"
 echo "================================================="
 
-# 1. Update system & Install PHP 8.3
+# 1. Update system & Install PHP 8.3 & Python3
 echo "[1/5] Updating system & Installing PHP 8.3..."
 sudo apt update -y
-sudo apt install -y software-properties-common curl wget git build-essential python2 g++ make
+sudo apt install -y software-properties-common curl wget git build-essential python3 python-is-python3 g++ make
 
 sudo add-apt-repository -y ppa:ondrej/php
 sudo apt update -y
 sudo apt install -y php8.3 php8.3-cli php8.3-curl php8.3-mbstring php8.3-xml php8.3-zip php8.3-gd php8.3-mysql
 sudo update-alternatives --set php /usr/bin/php8.3
 
-# 2. Install Node.js v16 (Required for Cloud9 SDK)
-echo "[2/5] Installing Node.js v16..."
-curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+# 2. Install Node.js v18 (LTS yang stabil untuk Ubuntu 24.04)
+echo "[2/5] Installing Node.js..."
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt install -y nodejs
 
 # 3. Clone & Build Cloud9 SDK
@@ -29,14 +29,14 @@ git clone https://github.com/c9/core.git $HOME/cloud9
 cd $HOME/cloud9
 
 echo "[4/5] Running Cloud9 SDK Installer Script..."
-scripts/install-sdk.sh
+PYTHON=python3 scripts/install-sdk.sh
 
 # 4. Create Systemd Service
 echo "[5/5] Configuring Systemd Service..."
 
 C9_PORT=8080
-C9_USER="root"
-C9_PASS="Sansaii26"
+C9_USER="admin"
+C9_PASS="Sansaii83#Secure"
 
 sudo tee /etc/systemd/system/cloud9.service > /dev/null <<EOF
 [Unit]
