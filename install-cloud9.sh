@@ -1,8 +1,7 @@
 #!/bin/bash
 # ==============================================================================
 # Cloud9 IDE + PHP 8.3 Auto Installer
-# Repositori  : https://github.com/USERNAME/REPO_ANDA
-# Base Image  : Ubuntu 24.04 LTS (Noble Numbat)
+# Base Image  : lscr.io/linuxserver/cloud9:latest (Ubuntu 24.04 LTS Noble)
 # ==============================================================================
 
 set -e
@@ -16,7 +15,6 @@ echo -e "${BLUE}==================================================${NC}"
 echo -e "${BLUE}    AUTOMATED CLOUD9 IDE INSTALLER (PHP 8.3)      ${NC}"
 echo -e "${BLUE}==================================================${NC}"
 
-# Variable Konfigurasi (Bisa di-override dari lingkungan)
 C9_PORT=${C9_PORT:-8080}
 C9_USER=${C9_USER:-root}
 C9_PASS=${C9_PASS:-sansai}
@@ -36,7 +34,7 @@ if [ "$(sudo docker ps -a -q -f name=cloud9)" ]; then
     sudo docker rm -f cloud9
 fi
 
-echo -e "\n${GREEN}[4/5] Menjalankan Container Cloud9 (Ubuntu 24.04 Noble)...${NC}"
+echo -e "\n${GREEN}[4/5] Menjalankan Container Cloud9 (Latest Ubuntu)...${NC}"
 sudo docker run -d \
   --name=cloud9 \
   -e PUID=1000 \
@@ -47,7 +45,7 @@ sudo docker run -d \
   -p "$C9_PORT":8000 \
   -v "$WORKSPACE_DIR":/code \
   --restart unless-stopped \
-  lscr.io/linuxserver/cloud9:ubuntu-noble
+  lscr.io/linuxserver/cloud9:latest
 
 echo -e "\n${GREEN}[5/5] Menginstal PHP 8.3 & Composer ke Dalam Container...${NC}"
 echo "Menunggu container siap (5 detik)..."
@@ -88,6 +86,5 @@ echo " URL Akses : http://${PUBLIC_IP}:${C9_PORT}"
 echo " Username  : ${C9_USER}"
 echo " Password  : ${C9_PASS}"
 echo " Workspace : /code (terhubung ke $WORKSPACE_DIR)"
-echo " Base OS   : Ubuntu 24.04 LTS (Noble)"
 echo " Runtime   : PHP 8.3 & Composer"
 echo -e "${GREEN}==================================================${NC}"
