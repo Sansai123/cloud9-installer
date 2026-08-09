@@ -46,21 +46,29 @@ sudo docker run -d \
   --restart unless-stopped \
   lscr.io/linuxserver/cloud9:latest
 
-# 5. Inject Tooling Tambahan (PHP, Python, Git) ke dalam Container
-echo "[5/5] Memasang PHP & Python runtime di dalam lingkungan C9..."
+# 5. Inject Tooling Tambahan (PHP 8.1 & Python 3) ke dalam Container
+echo "[5/5] Memasang PHP 8.1 & Python runtime di dalam lingkungan C9..."
 sleep 5 # Menunggu container selesai inisialisasi
+
+# Update repo & install paket pendukung PPA
 sudo docker exec -u root cloud9 apt-get update -y
+sudo docker exec -u root cloud9 apt-get install -y software-properties-common wget nano python3 python3-pip python3-venv
+
+# Tambahkan PPA Ondrej untuk PHP 8.1
+sudo docker exec -u root cloud9 add-apt-repository ppa:ondrej/php -y
+sudo docker exec -u root cloud9 apt-get update -y
+
+# Install PHP 8.1 beserta ekstensi penting
 sudo docker exec -u root cloud9 apt-get install -y \
-    php-cli \
-    php-curl \
-    php-json \
-    php-mbstring \
-    php-xml \
-    python3 \
-    python3-pip \
-    python3-venv \
-    wget \
-    nano
+    php8.1-cli \
+    php8.1-curl \
+    php8.1-mbstring \
+    php8.1-xml \
+    php8.1-zip \
+    php8.1-mysql
+
+# Set PHP 8.1 sebagai default
+sudo docker exec -u root cloud9 update-alternatives --set php /usr/bin/php8.1
 
 # Ambil IP Public VPS
 PUBLIC_IP=$(curl -s ifconfig.me || curl -s api.ipify.org || echo "IP-VPS-ANDA")
@@ -73,5 +81,5 @@ echo " URL Akses : http://${PUBLIC_IP}:${C9_PORT}"
 echo " Username  : ${C9_USER}"
 echo " Password  : ${C9_PASS}"
 echo " Workspace : /code (terhubung ke $WORKSPACE_DIR)"
-echo " Environment: Identik dengan c9sdk (Node v6.3.1 + node-pty)"
+echo " Runtime   : PHP 8.1 + Node v6.3.1 + Python 3"
 echo "=================================================="
