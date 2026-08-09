@@ -1,71 +1,56 @@
+cat << 'EOF' > install-cloud9.sh
 #!/bin/bash
-
-# Exit immediately if a command exits with a non-zero status
 set -e
 
 echo "================================================="
 echo "🚀 Cloud9 SDK Native + PHP 8.3 Auto-Installer"
+echo "   (Fix Ubuntu 24.04 Python 2.7 Compatibility)"
 echo "================================================="
 
-# 1. Update system & Install PHP 8.3 & Python3
-echo "[1/5] Updating system & Installing PHP 8.3..."
+echo "[1/6] Installing Python 2.7 Compatibility Layer..."
 sudo apt update -y
-sudo apt install -y software-properties-common curl wget git build-essential python3 python-is-python3 g++ make
+sudo apt install -y wget curl build-essential make g++ software-properties-common
 
-sudo add-apt-repository -y ppa:ondrej/php
+# Download & Install Python 2.7 packages directly for Ubuntu 24.04
+TMP_DIR=$(mktemp -d)
+cd $TMP_DIR
+wget -q http://archive.ubuntu.com/ubuntu/pool/universe/p/python2.7/libpython2.7-minimal_2.7.18-13ubuntu1.2_amd64.deb
+wget -q http://archive.ubuntu.com/ubuntu/pool/universe/p/python2.7/python2.7-minimal_2.7.18-13ubuntu1.2_amd64.deb
+wget -q http://archive.ubuntu.com/ubuntu/pool/universe/p/python2.7/libpython2.7-stdlib_2.7.18-13ubuntu1.2_amd64.deb
+wget -q http://archive.ubuntu.com/ubuntu/pool/universe/p/python2.7/python2.7_2.7.18-13ubuntu1.2_amd64.deb
+
+sudo dpkg -i *.deb || sudo apt-get install -f -y
+cd ~
+rm -rf $TMP_DIR
+
+# Set symlink for python -> python2.7
+sudo ln -sf /usr/bin/python2.7 /usr/bin/python
+
+echo "[2/6] Installing PHP 8.3..."
+sudo add-apt-repository ppa:ondrej/php -y
 sudo apt update -y
 sudo apt install -y php8.3 php8.3-cli php8.3-curl php8.3-mbstring php8.3-xml php8.3-zip php8.3-gd php8.3-mysql
-sudo update-alternatives --set php /usr/bin/php8.3
 
-# 2. Install Node.js v18 (LTS yang stabil untuk Ubuntu 24.04)
-echo "[2/5] Installing Node.js..."
+echo "[3/6] Installing Node.js 18..."
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt install -y nodejs
 
-# 3. Clone & Build Cloud9 SDK
-echo "[3/5] Setting up Cloud9 SDK..."
-rm -rf $HOME/cloud9
-git clone https://github.com/c9/core.git $HOME/cloud9
+echo "[4/6] Setting up Cloud9 SDK..."
+if [ ! -d "$HOME/cloud9" ]; then
+  git clone https://github.com/c9/core.git $HOME/cloud9
+fi
+
+echo "[5/6] Running Cloud9 SDK Installer..."
 cd $HOME/cloud9
+PYTHON=/usr/bin/python2.7 ./scripts/install-sdk.sh
 
-echo "[4/5] Running Cloud9 SDK Installer Script..."
-PYTHON=python3 scripts/install-sdk.sh
+echo "[6/6] Restoring System Python Symlink..."
+sudo ln -sf /usr/bin/python3 /usr/bin/python
 
-# 4. Create Systemd Service
-echo "[5/5] Configuring Systemd Service..."
-
-C9_PORT=8080
-C9_USER="admin"
-C9_PASS="Sansaii26"
-
-sudo tee /etc/systemd/system/cloud9.service > /dev/null <<EOF
-[Unit]
-Description=Cloud9 IDE Native Service
-After=network.target
-
-[Service]
-Type=simple
-User=$USER
-WorkingDirectory=$HOME/cloud9
-ExecStart=/usr/bin/node $HOME/cloud9/server.js -p $C9_PORT -a $C9_USER:$C9_PASS -w $HOME
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
+echo "================================================="
+echo "✅ Instalasi Cloud9 & PHP 8.3 Selesai!"
+echo "================================================="
 EOF
 
-# Enable and Start Service
-sudo systemctl daemon-reload
-sudo systemctl enable cloud9
-sudo systemctl restart cloud9
-
-# Final Information
-PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me || curl -s --max-time 5 api.ipify.org || echo "YOUR_VPS_IP")
-
-echo "================================================="
-echo "🎉 Cloud9 Setup Successfully Completed!"
-echo "================================================="
-echo "🔗 Access URL : http://${PUBLIC_IP}:${C9_PORT}"
-echo "🔑 Username   : ${C9_USER}"
-echo "🔑 Password   : ${C9_PASS}"
-echo "================================================="
+chmod +x install-cloud9.sh
+sudo ./install-cloud9.sh
