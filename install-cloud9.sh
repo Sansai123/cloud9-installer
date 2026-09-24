@@ -1,30 +1,24 @@
 #!/bin/bash
 # ==============================================================================
-# Cloud9 IDE + PHP 8.1 Automated Installer
-# GitHub Repository Compatible Script
-# Base Image  : lscr.io/linuxserver/cloud9:latest
+# Cloud9 IDE + PHP Automated Installer (Stable Native Repo)
 # ==============================================================================
 
 set -eo pipefail
 
-# Warna untuk output terminal
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[0;33m'
-RED='\033[0;31m'
 NC='\033[0m'
 
 echo -e "${BLUE}==================================================${NC}"
-echo -e "${BLUE}    AUTOMATED CLOUD9 IDE INSTALLER (PHP 8.1)      ${NC}"
+echo -e "${BLUE}    AUTOMATED CLOUD9 IDE INSTALLER (PHP)          ${NC}"
 echo -e "${BLUE}==================================================${NC}"
 
-# Definisi Nilai Default
 C9_PORT="${C9_PORT:-8080}"
 C9_USER="${C9_USER:-root}"
 C9_PASS="${C9_PASS:-sansai}"
 WORKSPACE_DIR="${WORKSPACE_DIR:-$HOME/workspace}"
 
-# Cek Akses Root / Sudo
 if [ "$EUID" -ne 0 ]; then
     SUDO="sudo"
 else
@@ -39,9 +33,9 @@ $SUDO systemctl enable --now docker
 echo -e "\n${GREEN}[2/5] Menyiapkan Direktori Workspace...${NC}"
 mkdir -p "$WORKSPACE_DIR"
 
-echo -e "\n${GREEN}[3/5] Memeriksa & Menghapus Container Cloud9 Lama...${NC}"
+echo -e "\n${GREEN}[3/5] Menghapus Container Cloud9 Lama...${NC}"
 if [ "$($SUDO docker ps -a -q -f name=cloud9)" ]; then
-    echo -e "${YELLOW}  -> Menghapus container Cloud9 lama...${NC}"
+    echo -e "${YELLOW}  -> Menghapus container lama...${NC}"
     $SUDO docker rm -f cloud9
 fi
 
@@ -58,33 +52,18 @@ $SUDO docker run -d \
   --restart unless-stopped \
   lscr.io/linuxserver/cloud9:latest
 
-echo -e "\n${GREEN}[5/5] Menginstal PHP 8.1 & Composer ke Dalam Container...${NC}"
+echo -e "\n${GREEN}[5/5] Menginstal PHP & Composer ke Dalam Container...${NC}"
 echo "Menunggu container inisialisasi (8 detik)..."
 sleep 8
 
-# Install PHP 8.1 dengan pembersihan list apt terlebih dahulu
+# Menggunakan PHP bawaan dari repository resmi Ubuntu (stabil & tanpa error PPA)
 $SUDO docker exec -u root cloud9 bash -c "
     export DEBIAN_FRONTEND=noninteractive
-    apt-get clean && rm -rf /var/lib/apt/lists/*
     apt-get update -y && \
-    apt-get install -y software-properties-common wget nano curl git unzip && \
-    add-apt-repository ppa:ondrej/php -y && \
-    apt-get update -y && \
-    apt-get install -y \
-        php8.1-cli \
-        php8.1-curl \
-        php8.1-mbstring \
-        php8.1-xml \
-        php8.1-zip \
-        php8.1-mysql \
-        php8.1-gd \
-        php8.1-sqlite3 \
-        php8.1-bcmath && \
-    update-alternatives --set php /usr/bin/php8.1 && \
+    apt-get install -y wget nano curl git unzip php php-cli php-curl php-mbstring php-xml php-zip php-mysql php-gd php-sqlite3 php-bcmath && \
     curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 "
 
-# Mendapatkan Public IP Server
 PUBLIC_IP=$(curl -s --max-time 5 ifconfig.me || curl -s --max-time 5 api.ipify.org || echo "IP-VPS-ANDA")
 
 echo ""
@@ -95,5 +74,4 @@ echo -e " URL Akses : ${BLUE}http://${PUBLIC_IP}:${C9_PORT}${NC}"
 echo -e " Username  : ${YELLOW}${C9_USER}${NC}"
 echo -e " Password  : ${YELLOW}${C9_PASS}${NC}"
 echo -e " Workspace : /code (terhubung ke $WORKSPACE_DIR)"
-echo -e " Runtime   : PHP 8.1 & Composer"
 echo -e "${GREEN}==================================================${NC}"
