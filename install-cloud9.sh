@@ -2,7 +2,7 @@
 # ==============================================================================
 # Cloud9 IDE + PHP 8.1 Automated Installer
 # GitHub Repository Compatible Script
-# Base Image  : lscr.io/linuxserver/cloud9:latest
+# Base Image  : lscr.io/linuxserver/cloud9:latest (Ubuntu Noble)
 # ==============================================================================
 
 set -eo pipefail
@@ -62,14 +62,12 @@ echo -e "\n${GREEN}[5/5] Menginstal PHP 8.1 & Composer ke Dalam Container...${NC
 echo "Menunggu container inisialisasi (8 detik)..."
 sleep 8
 
-# Non-interactive Mode untuk APT
-DEBIAN_FRONTEND=noninteractive
-
-# Update Repository & Install PHP 8.1
+# Update Repository, Aktifkan Universe & Ondrej PPA, Lalu Install PHP 8.1
 $SUDO docker exec -u root cloud9 bash -c "
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -y && \
     apt-get install -y software-properties-common wget nano curl git unzip && \
+    add-apt-repository universe -y && \
     add-apt-repository ppa:ondrej/php -y && \
     apt-get update -y && \
     apt-get install -y \
