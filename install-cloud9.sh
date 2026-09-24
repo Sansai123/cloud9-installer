@@ -2,7 +2,7 @@
 # ==============================================================================
 # Cloud9 IDE + PHP 8.1 Automated Installer
 # GitHub Repository Compatible Script
-# Base Image  : lscr.io/linuxserver/cloud9:ubuntu-jammy (Ubuntu 22.04 LTS)
+# Base Image  : lscr.io/linuxserver/cloud9:latest
 # ==============================================================================
 
 set -eo pipefail
@@ -18,7 +18,7 @@ echo -e "${BLUE}==================================================${NC}"
 echo -e "${BLUE}    AUTOMATED CLOUD9 IDE INSTALLER (PHP 8.1)      ${NC}"
 echo -e "${BLUE}==================================================${NC}"
 
-# Definisi Nilai Default (Bisa Di-override saat eksekusi)
+# Definisi Nilai Default
 C9_PORT="${C9_PORT:-8080}"
 C9_USER="${C9_USER:-root}"
 C9_PASS="${C9_PASS:-sansai}"
@@ -45,7 +45,7 @@ if [ "$($SUDO docker ps -a -q -f name=cloud9)" ]; then
     $SUDO docker rm -f cloud9
 fi
 
-echo -e "\n${GREEN}[4/5] Menjalankan Container Cloud9 (Ubuntu Jammy)...${NC}"
+echo -e "\n${GREEN}[4/5] Menjalankan Container Cloud9...${NC}"
 $SUDO docker run -d \
   --name=cloud9 \
   -e PUID=$(id -u) \
@@ -56,15 +56,16 @@ $SUDO docker run -d \
   -p "$C9_PORT":8000 \
   -v "$WORKSPACE_DIR":/code \
   --restart unless-stopped \
-  lscr.io/linuxserver/cloud9:ubuntu-jammy
+  lscr.io/linuxserver/cloud9:latest
 
 echo -e "\n${GREEN}[5/5] Menginstal PHP 8.1 & Composer ke Dalam Container...${NC}"
 echo "Menunggu container inisialisasi (8 detik)..."
 sleep 8
 
-# Install PHP 8.1 di Ubuntu Jammy (Sudah ada secara bawaan di repo Jammy / PPA)
+# Install PHP 8.1 dengan pembersihan list apt terlebih dahulu
 $SUDO docker exec -u root cloud9 bash -c "
     export DEBIAN_FRONTEND=noninteractive
+    apt-get clean && rm -rf /var/lib/apt/lists/*
     apt-get update -y && \
     apt-get install -y software-properties-common wget nano curl git unzip && \
     add-apt-repository ppa:ondrej/php -y && \
